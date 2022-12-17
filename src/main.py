@@ -97,6 +97,7 @@ def download(session):
         file.write(response.content)
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
+
 def check_pep_results(all_pep):
     results = {}
     output = [('Статус', 'Количество')]
