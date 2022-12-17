@@ -7,6 +7,7 @@ from prettytable import PrettyTable
 
 from constants import BASE_DIR, DATETIME_FORMAT
 
+
 def control_output(results, cli_args):
     output = cli_args.output
     if output == 'pretty':
@@ -19,10 +20,12 @@ def control_output(results, cli_args):
         # Вывод по умолчанию.
         default_output(results)
 
+
 def default_output(results):
     # Печатаем список results построчно.
     for row in results:
         print(*row)
+
 
 def pretty_output(results):
     # Инициализируем объект PrettyTable.
@@ -35,6 +38,7 @@ def pretty_output(results):
     table.add_rows(results[1:])
     # Печатаем таблицу.
     print(table)
+
 
 def file_output(results, cli_args):
     # Сформируйте путь до директории results.

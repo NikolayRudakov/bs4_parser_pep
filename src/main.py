@@ -25,16 +25,16 @@ def whats_new(session):
 
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
 
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    sections_by_python = div_with_ul.find_all(
+        'li',
+        attrs={'class': 'toctree-l1'}
+    )
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
         href = version_a_tag['href']
         version_link = urljoin(whats_new_url, href)
-#        response = session.get(version_link)
-#        response.encoding = 'utf-8'
         response = get_response(session, version_link)
         if response is None:
-            # Если страница не загрузится, программа перейдёт к следующей ссылке.
             continue
         soup = BeautifulSoup(response.text, features='lxml')
         h1 = find_tag(soup, 'h1')
@@ -80,7 +80,11 @@ def download(session):
         return
     soup = BeautifulSoup(response.text, features='lxml')
     table_tag = find_tag(soup, 'table', attrs={'class': 'docutils'})
-    pdf_a4_tag = find_tag(table_tag, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
+    pdf_a4_tag = find_tag(
+        table_tag,
+        'a',
+        {'href': re.compile(r'.+pdf-a4\.zip$')}
+    )
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split('/')[-1]
@@ -93,35 +97,9 @@ def download(session):
         file.write(response.content)
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
-
-def pep(session):
+def check_pep_results(all_pep):
     results = {}
     output = [('Статус', 'Количество')]
-    all_pep = []
-    response = get_response(session, PEP_URL)
-    if response is None:
-        return
-    soup = BeautifulSoup(response.text, features='lxml')
-    tables = soup.find_all('table', attrs={'class': 'pep-zero-table docutils align-default'})
-    for cells in tqdm(tables):
-        for row in cells.find_all('tr'):
-            status_cell = row.find('abbr')
-            if status_cell is not None:
-                status = status_cell.text[1:]
-            else:
-                status = ''
-
-            a_tag = row.find('a')
-            if a_tag:
-                link = urljoin(PEP_URL, a_tag['href'])
-                response = get_response(session, link)
-                soup = BeautifulSoup(response.text, features='lxml')
-                status_from_link = soup.find(string='Status').parent.find_next_sibling().text
-            else:
-                link = ''
-                status_from_link = ''
-            if status != '' or link != '':
-                all_pep.append((status, link, status_from_link))
     wrong_tatus_exist = False
     for cell in all_pep:
         if cell[2] not in EXPECTED_STATUS[cell[0]]:
@@ -137,8 +115,39 @@ def pep(session):
             results[cell[2]] += 1
     results['Total'] = len(all_pep)
     output = output + list(results.items())
-
     return output
+
+
+def pep(session):
+    all_pep = []
+    response = get_response(session, PEP_URL)
+    if response is None:
+        return
+    soup = BeautifulSoup(response.text, features='lxml')
+    tables = soup.find_all(
+        'table',
+        attrs={'class': 'pep-zero-table docutils align-default'}
+    )
+    for cells in tqdm(tables):
+        for row in cells.find_all('tr'):
+            status_cell = row.find('abbr')
+            if status_cell is not None:
+                status = status_cell.text[1:]
+            else:
+                status = ''
+            a_tag = row.find('a')
+            if a_tag:
+                link = urljoin(PEP_URL, a_tag['href'])
+                response = get_response(session, link)
+                soup = BeautifulSoup(response.text, features='lxml')
+                status_from_link = \
+                    soup.find(string='Status').parent.find_next_sibling().text
+            else:
+                link = ''
+                status_from_link = ''
+            if status != '' or link != '':
+                all_pep.append((status, link, status_from_link))
+    return check_pep_results(all_pep)
 
 
 MODE_TO_FUNCTION = {
