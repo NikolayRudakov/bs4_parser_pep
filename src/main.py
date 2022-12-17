@@ -11,6 +11,7 @@ from constants import BASE_DIR, MAIN_DOC_URL, PEP_URL, EXPECTED_STATUS
 from configs import configure_argument_parser, configure_logging
 from outputs import control_output
 
+
 def whats_new(session):
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
@@ -37,10 +38,11 @@ def whats_new(session):
             continue
         soup = BeautifulSoup(response.text, features='lxml')
         h1 = find_tag(soup, 'h1')
-        dl = find_tag(soup,'dl')  # Найдите в "супе" тег dl.
+        dl = find_tag(soup, 'dl')  # Найдите в "супе" тег dl.
         dl_text = dl.text.replace('\n', ' ')
         results.append((version_link, h1.text, dl_text))
     return results
+
 
 def latest_versions(session):
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
@@ -77,8 +79,8 @@ def download(session):
     if response is None:
         return
     soup = BeautifulSoup(response.text, features='lxml')
-    table_tag = find_tag(soup,'table', attrs={'class': 'docutils'})
-    pdf_a4_tag = find_tag(table_tag,'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
+    table_tag = find_tag(soup, 'table', attrs={'class': 'docutils'})
+    pdf_a4_tag = find_tag(table_tag, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split('/')[-1]
@@ -91,8 +93,8 @@ def download(session):
         file.write(response.content)
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
-def pep(session):
 
+def pep(session):
     results = {}
     output = [('Статус', 'Количество')]
     all_pep = []
@@ -104,7 +106,7 @@ def pep(session):
     for cells in tqdm(tables):
         for row in cells.find_all('tr'):
             status_cell = row.find('abbr')
-            if status_cell != None:
+            if status_cell is not None:
                 status = status_cell.text[1:]
             else:
                 status = ''
@@ -114,13 +116,12 @@ def pep(session):
                 link = urljoin(PEP_URL, a_tag['href'])
                 response = get_response(session, link)
                 soup = BeautifulSoup(response.text, features='lxml')
-                #status_tag = soup.find('dt', attrs={'class': 'field-even'}, string = 'Status')
                 status_from_link = soup.find(string='Status').parent.find_next_sibling().text
-
             else:
                 link = ''
+                status_from_link = ''
             if status != '' or link != '':
-                all_pep.append((status,link,status_from_link))
+                all_pep.append((status, link, status_from_link))
     wrong_tatus_exist = False
     for cell in all_pep:
         if cell[2] not in EXPECTED_STATUS[cell[0]]:
@@ -140,16 +141,13 @@ def pep(session):
     return output
 
 
-
-
-
-
 MODE_TO_FUNCTION = {
     'whats-new': whats_new,
     'latest-versions': latest_versions,
     'download': download,
     'pep': pep,
 }
+
 
 def main():
     # Запускаем функцию с конфигурацией логов.
@@ -169,6 +167,7 @@ def main():
         control_output(results, args)
     # Логируем завершение работы парсера.
     logging.info('Парсер завершил работу.')
+
 
 if __name__ == '__main__':
     main()
