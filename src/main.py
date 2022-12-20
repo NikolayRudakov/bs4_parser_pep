@@ -19,7 +19,9 @@ def whats_new(session):
     soup = BeautifulSoup(response.text, features="lxml")
     main_div = find_tag(soup, "section", attrs={"id": "what-s-new-in-python"})
     div_with_ul = find_tag(main_div, "div", attrs={"class": "toctree-wrapper"})
-    sections_by_python = div_with_ul.find_all("li", attrs={"class": "toctree-l1"})
+    sections_by_python = div_with_ul.find_all(
+        "li", attrs={"class": "toctree-l1"}
+    )
     for section in tqdm(sections_by_python):
         version_a_tag = section.find("a")
         href = version_a_tag["href"]
@@ -68,7 +70,9 @@ def download(session):
     response = get_response(session, downloads_url)
     soup = BeautifulSoup(response.text, features="lxml")
     table_tag = find_tag(soup, "table", attrs={"class": "docutils"})
-    pdf_a4_tag = find_tag(table_tag, "a", {"href": re.compile(r".+pdf-a4\.zip$")})
+    pdf_a4_tag = find_tag(
+        table_tag, "a", {"href": re.compile(r".+pdf-a4\.zip$")}
+    )
     pdf_a4_link = pdf_a4_tag["href"]
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split("/")[-1]
